@@ -18,9 +18,10 @@ public class NespressoClickOnOrderTest extends StartClass {
     public static void init(){
         homePage=new HomePage(StartClass.getSession()).get();
     }
+
     @Test
     public void clickOnAcceptButtonTest(){
-        homePage.clickOnAcceptButton();
+        homePage.clickOnAcceptCookiesButton();
     }
     @AfterAll
     public static void clickOnOrderTest(){

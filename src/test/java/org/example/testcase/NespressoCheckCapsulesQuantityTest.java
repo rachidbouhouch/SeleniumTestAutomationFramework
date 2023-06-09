@@ -1,27 +1,54 @@
 package org.example.testcase;
 
+import io.github.artsok.RepeatedIfExceptionsTest;
 import org.example.base.CloseSession;
+import org.example.base.StartClass;
+import org.example.pom.HomePage;
 import org.example.pom.ProductPage;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-public class NespressoCheckCapsulesQuantityTest extends CloseSession {
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+
+
+public class NespressoCheckCapsulesQuantityTest {
 
     private static ProductPage productPage;
-    @BeforeAll
-    public static void init(){
+    private static HomePage homePage;
+    private static final StartClass startClass=new StartClass();
+
+
+    public void init() throws IOException {
+        startClass.setUp();
         productPage = new ProductPage();
+        homePage=new HomePage(StartClass.getSession()).get();
+    }
+    @ParameterizedTest
+    @MethodSource("org.example.utilities.ReadXLSData#getData")
+    public void CheckCapsulesQuantityTest(String productName,String Quantity) throws InterruptedException, IOException {
+        this.init();
+
+        homePage.clickOnAcceptCookiesButton();
+        homePage.hoverOnOrderCoffee();
+        homePage.clickOnOrder();
+
+        productPage.chooseCapsuleByNameAndClickOnAddToBagButton(productName);
+        productPage.checkCapsulesQuantityAndAddToCart(Integer.parseInt(Quantity));
+        productPage.clickOnButtonBasket();
+
+        boolean result=productPage.checkCapsulesQuantityFromCart(Quantity);
+        Assertions.assertTrue(result);
+
+        this.close();
+
     }
 
-    @Test
-    public void CheckCapsulesQuantityTest() throws InterruptedException {
-        productPage.chooseRandomCapsule();
-        productPage.clickOnAddToBagButton();
-        productPage.checkCapsulesQuantityAndAddToCart();
-        if(productPage.checkCapsulesQuantityFromCart()){
-            System.out.println("YES");
-        }else {
-            System.out.println("NOO");
-        }
+    public void close() {
+        StartClass.getSession().close();
     }
+
+
 
 }

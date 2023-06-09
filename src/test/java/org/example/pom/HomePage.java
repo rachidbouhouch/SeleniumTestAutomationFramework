@@ -1,7 +1,7 @@
 package org.example.pom;
 
 import org.example.base.StartClass;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -17,10 +17,10 @@ import java.time.Duration;
 public class HomePage extends LoadableComponent<HomePage> {
     WebDriver driver;
 
-    @FindBy(xpath = "//a[contains(@href,'/order/capsules/') and @class='AccessibleLink HeaderNavigationBarDropdown__medium-link']")
+    @FindBy(xpath = "//a[contains(@href,'/order/capsules') and contains(@class,'AccessibleLink HeaderNavigationBar')]")
     WebElement btn_order;
 
-    @FindBy(xpath = "//a[contains(@href,'/order/capsules/') and contains(@class,'AccessibleLink')]")
+    @FindBy(xpath = "//a[contains(@href,'/order/capsules') and contains(@class,'AccessibleLink')]")
     WebElement link_order;
     @FindBy(xpath = "//button[contains(@id,'accept')]")
     WebElement accept_button;
@@ -31,7 +31,7 @@ public class HomePage extends LoadableComponent<HomePage> {
 
     @Override
     protected void load() {
-        driver.get(StartClass.getPropertiesConfig().getProperty("testurl"));
+        driver.get(StartClass.getReadConfigProperties().getPropertiesConfig().getProperty("testurl")+StartClass.getReadConfigProperties().getPropertiesConfig().getProperty("language"));
         PageFactory.initElements(driver,this);
 
     }
@@ -39,10 +39,10 @@ public class HomePage extends LoadableComponent<HomePage> {
     @Override
     protected void isLoaded() throws Error {
         String url = driver.getCurrentUrl();
-        Assert.assertTrue("Not on the issue entry page: " + url, url.endsWith("www.nespresso.com/fr/en"));
+        Assertions.assertTrue(url.endsWith("nespresso.com/fr/en/"), "Not on the issue entry page: " + url);
     }
 
-    public void clickOnAcceptButton(){
+    public void clickOnAcceptCookiesButton(){
         accept_button.click();
     }
     public void hoverOnOrderCoffee(){

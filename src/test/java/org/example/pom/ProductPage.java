@@ -1,6 +1,7 @@
 package org.example.pom;
 
 import org.example.base.StartClass;
+import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -13,20 +14,11 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import java.time.Duration;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 public class ProductPage {
 
     WebDriver driver;
-    private static int int_random;
-
-    @FindBy(xpath = "//article[@class='ProductCard']/a/footer/h3")
-    List<WebElement> productsName;
-
-    @FindBy(xpath = "//div/button[contains(@class,'AddToBagButton')]")
-    List<WebElement> elementsButton;
-
-    @FindBy(xpath = "//button[@class='PredefinedQuantityList__quantity-button']/span[contains(@class,'notranslate')]")
-    List<WebElement> capsulesQuantityList;
 
     @FindBy(xpath = "//input[contains(@id,'ta-quantity-selector__custom-field')]")
     WebElement inputField;
@@ -54,68 +46,50 @@ public class ProductPage {
 
     }
 
-    public void chooseRandomCapsule(){
-        Random rand = new Random();
-        int_random=rand.nextInt(productsName.size());
-        WebElement productName=productsName.get(int_random);
-        System.out.println(productName.getText());
+    public void chooseCapsuleByNameAndClickOnAddToBagButton(String capsuleName) throws InterruptedException {
+        scrollToBottom();
+        WebElement productName = createWebElement("//h3[text()='"+capsuleName+"']/ancestor::article//button[contains(@class,'AddToBagButtonSmall')]");
+        Actions action=new Actions(driver);
+        action.moveToElement(productName).click().build().perform();
     }
 
 
-    public void clickOnAddToBagButton() throws InterruptedException {
-        //BaseClass.getSession().manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS);
-        //JavascriptExecutor js=(JavascriptExecutor)BaseClass.getSession();
+    /*public void clickOnAddToBagButton() throws InterruptedException {
+        Actions action=new Actions(driver);
+        action.moveToElement(productName).click().build().perform();
 
-        scrollSmooth();
-        WebElement elementButton=elementsButton.get(int_random);
-        //Display
-        System.out.println(elementsButton.size());
-
-        Actions action = new Actions(driver);
-        action.moveToElement(elementButton).click().build().perform();
-
-        //elementButton.click();
-    }
-    public void checkCapsulesQuantityAndAddToCart() throws InterruptedException{
-        int capsules_quantity=Integer.parseInt(StartClass.getPropertiesData().getProperty("capsules_quantity"));
-
-        WebElement result=capsulesQuantityList.stream().filter((e)-> Integer.parseInt(e.getText())==capsules_quantity).findFirst().orElse(null);
-        //System.out.println(result);
+    }*/
+    public void checkCapsulesQuantityAndAddToCart(int quantity) throws InterruptedException{
+        WebElement result = createWebElement("//button[@class='PredefinedQuantityList__quantity-button']/span[@class='notranslate' and text()='"+quantity+"']");
+        System.out.println(result);
         if(result!=null){
             System.out.println("Cas 1 : exist in my list");
             result.click();
-
         }
         else {
             //Display
-            System.out.println(StartClass.getPropertiesData().getProperty("capsules_quantity"));
-
-            //WebElement inputField = new WebDriverWait(BaseClass.getSession(), Duration.ofSeconds(10)).until(driver -> driver.findElement(By.xpath("//input[contains(@id,'ta-quantity-selector__custom-field')]")));
-            inputField.sendKeys(StartClass.getPropertiesData().getProperty("capsules_quantity"));
+            System.out.println(String.valueOf(quantity));
+            inputField.sendKeys(String.valueOf(quantity));
             Actions action = new Actions(driver);
-            moveToElement(button_ok,action);
+            moveAndClickToElement(button_ok,action);
 
-            if(capsules_quantity%10!=0)  {
+            if(quantity%10!=0)  {
                 System.out.println("Cas 2 : different multiple 10");
-                moveToElement(button_ok,action);
-                //System.out.println(inputField.getText());
-                //click on button again
+                moveAndClickToElement(button_ok,action);
             }
         }
 
-        Thread.sleep(5000);
-
     }
-
-    public boolean checkCapsulesQuantityFromCart() throws InterruptedException {
+    public void clickOnButtonBasket() throws InterruptedException {
         Thread.sleep(5000);
-
         Actions action = new Actions(driver);
-        action.moveToElement(btn_basket).click().build().perform();
+        moveAndClickToElement(btn_basket,action);
         waitFor(quantity_on_basket);
+    }
+    public boolean checkCapsulesQuantityFromCart(String quantity) {
         //display
         System.out.println(quantity_on_basket.getText());
-        if(quantity_on_basket.getText().contains(capsules_quantity.getText())){
+        if(quantity_on_basket.getText().contains(quantity)){
             btn_checkout.click();
             return true;
         }
@@ -130,13 +104,37 @@ public class ProductPage {
         element.until(ExpectedConditions.visibilityOf(webElement));
     }
 
-    public void moveToElement(WebElement element,Actions action){
-        action.moveToElement(element).perform();
+    public void moveAndClickToElement(WebElement element,Actions action){
+        action.moveToElement(element).click().build().perform();
     }
 
-    public void scrollSmooth(){
-        for(int i=0;i<2000;i++) {
-            ((JavascriptExecutor) driver).executeScript("window.scrollBy(0,8)", "");
+    public WebElement createWebElement(String elementText) {
+        WebElement element = null;
+        try {
+            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+            wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath(elementText)));
+            element = driver.findElement(By.xpath(elementText));
+        } catch (Exception e) {
+            System.out.println("Exception occurred: " + e);
+        }
+        return element;
+    }
+
+//    public void scrollUntilFoundTheElement(WebElement webElement){
+//        ((JavascriptExecutor)driver).executeScript("arguments[0].scrollIntoView();", webElement);
+//
+//    }
+
+    public void scrollToBottom() throws InterruptedException {
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+        long windowHeight = (long) js.executeScript("return window.innerHeight");
+        long fullPageHeight = (long) js.executeScript("return document.documentElement.scrollHeight");
+        long scrollHeight = 0;
+
+        while (scrollHeight < fullPageHeight) {
+            scrollHeight += windowHeight;
+            js.executeScript("window.scrollTo(0, " + scrollHeight + ");");
+            Thread.sleep(1000);
         }
     }
 
